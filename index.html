@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Debug — Message vocal + image</title>
+  <title>Calendrier de l'Avent</title>
   <style>
     body {
       margin:0;
@@ -12,14 +12,14 @@
       flex-direction:column;
       min-height:100vh;
       align-items:center;
-      justify-content:flex-start;
+      justify-content:center;
       padding-top:20px;
       background:#111;
       color:#fff;
     }
     .card {
-      max-width:920px;
-      width:100%;
+      max-width:900px;
+      width:95%;
       padding:16px;
       box-sizing:border-box;
       text-align:center;
@@ -27,14 +27,14 @@
     img {
       max-width:100%;
       height:auto;
-      border-radius:8px;
+      border-radius:12px;
       box-shadow:0 6px 18px rgba(0,0,0,0.6);
     }
     h1 {
       margin:12px 0 6px 0;
       font-size:1.4rem;
     }
-    button {
+    #playBtn {
       margin-top:12px;
       padding:12px 18px;
       font-size:1rem;
@@ -43,36 +43,24 @@
       cursor:pointer;
       background:#1a73e8;
       color:#fff;
+      display:none;
     }
-    #debugBox {
-      margin-top:20px;
-      padding:15px;
-      width:90%;
-      max-width:900px;
-      background:#222;
-      border-radius:10px;
-      text-align:left;
-      font-size:0.9rem;
-      line-height:1.4rem;
-      white-space:pre-wrap;
-      word-break:break-word;
+    #hint {
+      margin-top:10px;
+      opacity:0.9;
+      font-size:0.95rem;
     }
-    a { color:#7abaff; }
   </style>
 </head>
 <body>
   <div class="card">
     <img id="poster" alt="Image" src="" />
-    <h1 id="dayLabel">[date]</h1>
+    <h1 id="dayLabel">[Jour]</h1>
 
-    <audio id="audio" src="" preload="auto"></audio>
+    <audio id="audio" preload="auto"></audio>
 
-    <button id="playBtn" style="display:none">▶️ Appuyer pour lancer l'audio</button>
-
-    <div id="debugBox">
-      <strong>DEBUG MODE :</strong>
-      <div id="debugContent">Chargement...</div>
-    </div>
+    <button id="playBtn">▶️ Appuyer pour lancer l'audio</button>
+    <div id="hint"></div>
   </div>
 
 <script>
@@ -81,7 +69,6 @@ function getParam(name){
   return url.searchParams.get(name);
 }
 
-// Nouveaux chemins locaux
 function imgUrl(filename) {
   return "assets/img/" + encodeURIComponent(filename);
 }
@@ -99,11 +86,6 @@ async function tryAutoplay(audioEl){
   }
 }
 
-function logDebug(msg) {
-  const box = document.getElementById('debugContent');
-  box.innerHTML += "\n" + msg;
-}
-
 window.addEventListener('DOMContentLoaded', async ()=>{
   const imgParam = getParam('img');
   const audioParam = getParam('audio');
@@ -113,64 +95,48 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   const audioEl = document.getElementById('audio');
   const dayLabel = document.getElementById('dayLabel');
   const playBtn = document.getElementById('playBtn');
-
-  logDebug("Paramètres reçus :");
-  logDebug("img = " + imgParam);
-  logDebug("audio = " + audioParam);
-  logDebug("day = " + dayParam);
+  const hint = document.getElementById('hint');
 
   if(!imgParam || !audioParam){
-    logDebug("❌ Paramètres manquants, impossible de charger les assets.");
+    dayLabel.textContent = "Erreur";
+    hint.textContent = "Les paramètres du lien QR sont incomplets.";
     return;
   }
 
+  // URLs locales
   const imgSrc = imgUrl(imgParam);
   const audioSrc = audioUrl(audioParam);
 
-  logDebug("\n→ URLs générées :");
-  logDebug("Image URL = " + imgSrc);
-  logDebug("Audio URL = " + audioSrc);
-
-  // Affichage date
-  dayLabel.textContent = dayParam;
-
-  // Chargement image
+  // Set content
   poster.src = imgSrc;
-
-  poster.onload = () => logDebug("✔️ Image chargée avec succès.");
-  poster.onerror = () => logDebug("❌ ERREUR : Impossible de charger l'image : " + imgSrc);
-
-  // Chargement audio
   audioEl.src = audioSrc;
+  dayLabel.textContent = "Jour " + dayParam;
 
-  audioEl.addEventListener("loadeddata", () => {
-    logDebug("✔️ Audio chargé (metadata OK).");
-  });
+  // Image error
+  poster.onerror = () => {
+    hint.textContent = "Impossible de charger l'image.";
+  };
 
-  audioEl.addEventListener("canplaythrough", () => {
-    logDebug("✔️ Audio prêt à lire.");
-  });
+  // Audio load errors
+  audioEl.onerror = () => {
+    hint.textContent = "Impossible de charger le fichier audio.";
+  };
 
-  audioEl.addEventListener("error", () => {
-    logDebug("❌ ERREUR AUDIO : impossible de charger " + audioSrc);
-  });
-
-  // Autoplay test
+  // Autoplay
   const autoplaySucceeded = await tryAutoplay(audioEl);
 
   if(autoplaySucceeded){
-    logDebug("✔️ Autoplay a fonctionné.");
+    hint.textContent = "Lecture automatique.";
   } else {
-    logDebug("⚠️ Autoplay bloqué par le navigateur.");
+    hint.textContent = "Lecture automatique bloquée, appuyez sur ▶️";
     playBtn.style.display = "inline-block";
     playBtn.addEventListener('click', async ()=>{
-      logDebug("⏯️ Tentative de lecture manuelle...");
       try{
         await audioEl.play();
-        logDebug("✔️ Audio lancé manuellement.");
+        hint.textContent = "Lecture en cours…";
         playBtn.style.display = "none";
       }catch(err){
-        logDebug("❌ ERREUR : échec de lecture manuelle.");
+        hint.textContent = "Impossible de lire le fichier audio.";
       }
     });
   }
