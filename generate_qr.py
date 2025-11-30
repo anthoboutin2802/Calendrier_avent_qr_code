@@ -5,7 +5,7 @@ from urllib.parse import urlencode, quote_plus
 from pathlib import Path
 
 # CONFIG
-GITHUB_BASE = "https://github.com/anthoboutin2802/Calendrier_avent_qr_code/"  # <-- Remplace ici
+GITHUB_BASE = "https://anthoboutin2802.github.io/Calendrier_avent_qr_code/"  # <-- Remplace ici
 MAPPING_CSV = "mapping.csv"   # format expliqué ci-dessous
 OUT_DIR = Path("output_qr")
 OUT_DIR.mkdir(exist_ok=True)
