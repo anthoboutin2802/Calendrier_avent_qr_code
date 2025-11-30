@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Message vocal + image</title>
+  <style>
+    body { margin:0; font-family: Arial, Helvetica, sans-serif; display:flex; flex-direction:column; min-height:100vh; align-items:center; justify-content:center; background:#111; color:#fff; }
+    .card { max-width:920px; width:100%; padding:16px; box-sizing:border-box; text-align:center; }
+    img { max-width:100%; height:auto; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.6); }
+    h1 { margin:12px 0 6px 0; font-size:1.4rem; }
+    #playBtn { margin-top:12px; padding:12px 18px; font-size:1rem; border-radius:8px; border:none; cursor:pointer; background:#1a73e8; color:#fff; }
+    #hint { font-size:0.9rem; margin-top:8px; opacity:0.9; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img id="poster" alt="Image" src="" />
+    <h1 id="dayLabel">[date]</h1>
+    <audio id="audio" src="" preload="auto"></audio>
+    <div id="controls">
+      <button id="playBtn" style="display:none">▶️ Appuyer pour lancer l'audio</button>
+      <div id="hint"></div>
+    </div>
+  </div>
+
+<script>
+function getParam(name){
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+function driveDirectUrl(id){
+  // format qui fonctionne généralement pour Drive : uc?export=download&id=...
+  return "https://drive.google.com/uc?export=download&id=" + encodeURIComponent(id);
+}
+
+async function tryAutoplay(audioEl){
+  try{
+    // Attempt to play
+    await audioEl.play();
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async ()=>{
+  const imgParam = getParam('img');
+  const audioParam = getParam('audio');
+  const dayParam = getParam('day') || "";
+
+  const poster = document.getElementById('poster');
+  const audioEl = document.getElementById('audio');
+  const dayLabel = document.getElementById('dayLabel');
+  const playBtn = document.getElementById('playBtn');
+  const hint = document.getElementById('hint');
+
+  if(!imgParam || !audioParam){
+    dayLabel.textContent = "Paramètres manquants";
+    hint.textContent = "Lien incorrect — vérifie que l'URL contient les paramètres img et audio.";
+    return;
+  }
+
+  poster.src = driveDirectUrl(imgParam);
+  audioEl.src = driveDirectUrl(audioParam);
+  dayLabel.textContent = dayParam;
+
+  // Try autoplay. Mobile browsers often block audible autoplay.
+  const autoplaySucceeded = await tryAutoplay(audioEl);
+
+  if(autoplaySucceeded){
+    hint.textContent = "Lecture automatique lancée.";
+    playBtn.style.display = "none";
+  } else {
+    hint.textContent = "Lecture automatique bloquée — appuie pour lancer l'audio.";
+    playBtn.style.display = "inline-block";
+    playBtn.addEventListener('click', async ()=>{
+      try{
+        await audioEl.play();
+        playBtn.style.display = 'none';
+        hint.textContent = "Lecture en cours";
+      }catch(err){
+        hint.textContent = "Impossible de lire le fichier audio : vérifie le lien.";
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>
