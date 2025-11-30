@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Calendrier de l'Avent</title>
+  <title>Calendrier de l'Avent d'Estelle</title>
   <style>
     body {
       margin:0;
@@ -17,6 +17,12 @@
       background:#111;
       color:#fff;
     }
+    h2 {
+      margin:0 0 20px 0;
+      font-size:1.8rem;
+      color:#f5d142;
+      text-shadow:0 0 8px rgba(255,255,255,0.5);
+    }
     .card {
       max-width:900px;
       width:95%;
@@ -29,13 +35,14 @@
       height:auto;
       border-radius:12px;
       box-shadow:0 6px 18px rgba(0,0,0,0.6);
+      margin-bottom:15px;
     }
     h1 {
-      margin:12px 0 6px 0;
-      font-size:1.4rem;
+      margin:0 0 12px 0;
+      font-size:1.6rem;
     }
-    #playBtn {
-      margin-top:12px;
+    button {
+      margin:8px;
       padding:12px 18px;
       font-size:1rem;
       border-radius:8px;
@@ -43,7 +50,9 @@
       cursor:pointer;
       background:#1a73e8;
       color:#fff;
-      display:none;
+    }
+    #replayBtn {
+      background:#28a745;
     }
     #hint {
       margin-top:10px;
@@ -53,13 +62,20 @@
   </style>
 </head>
 <body>
+
+  <!-- Nouveau titre principal -->
+  <h2>Calendrier de l'avent d'Estelle 🎄</h2>
+
   <div class="card">
-    <img id="poster" alt="Image" src="" />
     <h1 id="dayLabel">[Jour]</h1>
+
+    <img id="poster" alt="Image" src="" />
 
     <audio id="audio" preload="auto"></audio>
 
-    <button id="playBtn">▶️ Appuyer pour lancer l'audio</button>
+    <button id="playBtn" style="display:none">▶️ Lancer l'audio</button>
+    <button id="replayBtn" style="display:none">🔁 Rejouer</button>
+
     <div id="hint"></div>
   </div>
 
@@ -75,6 +91,13 @@ function imgUrl(filename) {
 
 function audioUrl(filename) {
   return "assets/audio/" + encodeURIComponent(filename);
+}
+
+// Convertit "01" → "1er Décembre", "02" → "2 Décembre", etc.
+function formatFrenchDate(day) {
+  const n = parseInt(day, 10);
+  if (n === 1) return "1er Décembre";
+  return n + " Décembre";
 }
 
 async function tryAutoplay(audioEl){
@@ -95,48 +118,61 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   const audioEl = document.getElementById('audio');
   const dayLabel = document.getElementById('dayLabel');
   const playBtn = document.getElementById('playBtn');
+  const replayBtn = document.getElementById('replayBtn');
   const hint = document.getElementById('hint');
 
   if(!imgParam || !audioParam){
     dayLabel.textContent = "Erreur";
-    hint.textContent = "Les paramètres du lien QR sont incomplets.";
+    hint.textContent = "Les paramètres du QR code sont incomplets.";
     return;
   }
 
-  // URLs locales
+  // Format du jour
+  dayLabel.textContent = formatFrenchDate(dayParam);
+
   const imgSrc = imgUrl(imgParam);
   const audioSrc = audioUrl(audioParam);
 
-  // Set content
   poster.src = imgSrc;
   audioEl.src = audioSrc;
-  dayLabel.textContent = "Jour " + dayParam;
 
-  // Image error
   poster.onerror = () => {
     hint.textContent = "Impossible de charger l'image.";
   };
 
-  // Audio load errors
   audioEl.onerror = () => {
     hint.textContent = "Impossible de charger le fichier audio.";
   };
 
-  // Autoplay
+  // Bouton rejouer
+  replayBtn.addEventListener('click', async ()=>{
+    try {
+      audioEl.currentTime = 0;
+      await audioEl.play();
+      hint.textContent = "Lecture en cours…";
+    } catch (err) {
+      hint.textContent = "Impossible de lire l'audio.";
+    }
+  });
+
+  // Tentative d'autoplay
   const autoplaySucceeded = await tryAutoplay(audioEl);
+
+  replayBtn.style.display = "inline-block";
 
   if(autoplaySucceeded){
     hint.textContent = "Lecture automatique.";
   } else {
-    hint.textContent = "Lecture automatique bloquée, appuyez sur ▶️";
+    hint.textContent = "Lecture automatique bloquée. Appuyez sur ▶️";
     playBtn.style.display = "inline-block";
+
     playBtn.addEventListener('click', async ()=>{
       try{
         await audioEl.play();
         hint.textContent = "Lecture en cours…";
         playBtn.style.display = "none";
       }catch(err){
-        hint.textContent = "Impossible de lire le fichier audio.";
+        hint.textContent = "Impossible de lire l'audio.";
       }
     });
   }
