@@ -1,0 +1,1 @@
+Project to generate QR CODE that show on scan image and button to play audio file difine in mappin.csv and present in assets directory
