@@ -5,12 +5,49 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Message vocal + image</title>
   <style>
-    body { margin:0; font-family: Arial, Helvetica, sans-serif; display:flex; flex-direction:column; min-height:100vh; align-items:center; justify-content:center; background:#111; color:#fff; }
-    .card { max-width:920px; width:100%; padding:16px; box-sizing:border-box; text-align:center; }
-    img { max-width:100%; height:auto; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.6); }
-    h1 { margin:12px 0 6px 0; font-size:1.4rem; }
-    #playBtn { margin-top:12px; padding:12px 18px; font-size:1rem; border-radius:8px; border:none; cursor:pointer; background:#1a73e8; color:#fff; }
-    #hint { font-size:0.9rem; margin-top:8px; opacity:0.9; }
+    body {
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+      align-items:center;
+      justify-content:center;
+      background:#111;
+      color:#fff;
+    }
+    .card {
+      max-width:920px;
+      width:100%;
+      padding:16px;
+      box-sizing:border-box;
+      text-align:center;
+    }
+    img {
+      max-width:100%;
+      height:auto;
+      border-radius:8px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.6);
+    }
+    h1 {
+      margin:12px 0 6px 0;
+      font-size:1.4rem;
+    }
+    #playBtn {
+      margin-top:12px;
+      padding:12px 18px;
+      font-size:1rem;
+      border-radius:8px;
+      border:none;
+      cursor:pointer;
+      background:#1a73e8;
+      color:#fff;
+    }
+    #hint {
+      font-size:0.9rem;
+      margin-top:8px;
+      opacity:0.9;
+    }
   </style>
 </head>
 <body>
@@ -30,14 +67,17 @@ function getParam(name){
   return url.searchParams.get(name);
 }
 
-function driveDirectUrl(id){
-  // format qui fonctionne généralement pour Drive : uc?export=download&id=...
-  return "https://drive.google.com/uc?export=download&id=" + encodeURIComponent(id);
+// On travaille maintenant avec des NOMS DE FICHIERS, pas des IDs
+function imgUrl(filename) {
+  return "assets/img/" + encodeURIComponent(filename);
+}
+
+function audioUrl(filename) {
+  return "assets/audio/" + encodeURIComponent(filename);
 }
 
 async function tryAutoplay(audioEl){
   try{
-    // Attempt to play
     await audioEl.play();
     return true;
   }catch(e){
@@ -62,11 +102,22 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     return;
   }
 
-  poster.src = driveDirectUrl(imgParam);
-  audioEl.src = driveDirectUrl(audioParam);
+  poster.src = imgUrl(imgParam);
+  audioEl.src = audioUrl(audioParam);
   dayLabel.textContent = dayParam;
 
-  // Try autoplay. Mobile browsers often block audible autoplay.
+  // Gestion erreur audio plus explicite
+  audioEl.addEventListener('error', () => {
+    const err = audioEl.error;
+    let msg = "Impossible de charger l'audio.";
+    if (err) {
+      msg += " (code " + err.code + ")";
+    }
+    hint.textContent = msg;
+    playBtn.style.display = 'none';
+  });
+
+  // tentative d'autoplay
   const autoplaySucceeded = await tryAutoplay(audioEl);
 
   if(autoplaySucceeded){
